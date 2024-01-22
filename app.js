@@ -37,7 +37,9 @@ const serverGraph = async ()=>{
             let tokken = req.headers.authorization
             let user = getUser(tokken)
             return {models,user}
-        }
+        },
+        playground: true, 
+        introspection: true,
     })
     await server.start()
     server.applyMiddleware({ app, path: '/api' });
