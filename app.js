@@ -40,6 +40,7 @@ const serverGraph = async ()=>{
         },
         playground: true, 
         introspection: true,
+        persistedQueries: false
     })
     await server.start()
     server.applyMiddleware({ app, path: '/api' });
