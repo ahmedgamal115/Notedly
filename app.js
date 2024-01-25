@@ -9,12 +9,13 @@ const hemlet = require('helmet')
 const cors = require('cors')
 const depthLimit = require('graphql-depth-limit')
 const { createComplexityLimitRule } = require('graphql-validation-complexity')
+const { ApolloServerPluginLandingPageProductionDefault, ApolloServerPluginLandingPageLocalDefault } = require('apollo-server-core')
 
 
 const app = express()
 const port = process.env.port || 3000
 
-app.use(hemlet())
+
 app.use(cors())
 
 const getUser = (tokken)=>{
@@ -30,6 +31,7 @@ const getUser = (tokken)=>{
 
 const serverGraph = async ()=>{
     const server = new ApolloServer({
+        introspection: true,
         typeDefs,
         resolvers,
         validationRules: [depthLimit(5),createComplexityLimitRule(1000)],
@@ -38,9 +40,6 @@ const serverGraph = async ()=>{
             let user = getUser(tokken)
             return {models,user}
         },
-        playground: true, 
-        introspection: true,
-        persistedQueries: false
     })
     await server.start()
     server.applyMiddleware({ app, path: '/api' });
