@@ -22,7 +22,7 @@ module.exports = {
             throw new AuthenticationError('Must signIn first')
         }
         const note = await models.Notes.findById({_id:args.id})
-        if(note && note.author !== user.id){
+        if(note && note.author.toString() !== user.id){
             throw new ForbiddenError("You don't have premision to update that note")
         }
         return await models.Notes.findOneAndUpdate({_id:args.id},{$set:{content: args.content}},{new:true})
@@ -32,7 +32,7 @@ module.exports = {
             throw new AuthenticationError('Must signIn first')
         }
         const note = await models.Notes.findById({_id:args.id})
-        if(note && note.author !== user.id){
+        if(note && note.author.toString() !== user.id){
             throw new ForbiddenError("You don't have premision to delete that note")
         }
         try {
