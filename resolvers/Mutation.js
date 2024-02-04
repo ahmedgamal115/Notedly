@@ -4,7 +4,23 @@ const { AuthenticationError,
         ForbiddenError } = require('apollo-server-express')
 require('dotenv').config()
 const gravatar = require('gravatar');
-const mongoose = require('mongoose')
+const mongoose = require('mongoose');
+const { validate } = require('validate.js');
+var constraints = {
+    fullname: {
+        length: {
+          minimum: 3,
+          tooShort: "needs to have %{count} words or more",
+          tokenizer: function(value) {
+            return value.split(/\s+/g);
+          }
+        }
+    },
+    email: {
+        email: true
+    }
+};
+var pattern = /^(?=.*[A-Za-z])(?=.*\d)(?=.*[@$!%*#?&])[A-Za-z\d@$!%*#?&]{8,}$/;
 
 module.exports = {
     newNote: async(parent,args,{models,user})=>{
@@ -84,19 +100,29 @@ module.exports = {
         email = email.trim().toLowerCase()
         const hashPassword = await bcrypt.hash(password,10)
         const avater = gravatar.url(email)
-        try {
-            let newUser = new models.users({
-                fullname: fullname,
-                username: username,
-                email: email,
-                password: hashPassword,
-                avater
-            })  
-            let user =  await newUser.save()
-            return jwt.sign({id:user._id},process.env.JWT_SECRET_KEY,{expiresIn:'1 days'})
-        } catch (error) {
-            console.log(error)
-            throw new Error('Error creating account')
+        if(!fullname || validate({fullname:fullname},constraints)){
+            throw new AuthenticationError(validate({fullname:fullname},constraints).fullname)
+        }else if(!username){
+            throw new AuthenticationError("You must set username")
+        }else if(!email || validate({email:email},constraints)){
+            throw new AuthenticationError(validate({email:email},constraints).email)
+        }else if(!password || validate({password: password}, {password: {format: pattern}})){
+            throw new AuthenticationError("Password must be minimum eight characters, at least one letter, one number and one special character")
+        }else{
+            try {
+                let newUser = new models.users({
+                    fullname: fullname,
+                    username: username,
+                    email: email,
+                    password: hashPassword,
+                    avater
+                })  
+                let user =  await newUser.save()
+                return jwt.sign({id:user._id},process.env.JWT_SECRET_KEY,{expiresIn:'1 days'})
+            } catch (error) {
+                console.log(error)
+                throw new Error('Error creating account')
+            }
         }
     },
     signIn: async(parent,{ email,password },{models})=>{
